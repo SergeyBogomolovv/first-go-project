@@ -9,7 +9,7 @@ import (
 type UsersModule struct {
 	repo       UserRepository
 	service    UserService
-	controller *userController
+	controller UserController
 }
 
 func (m *UsersModule) Register(db *sql.DB, router *chi.Mux) {

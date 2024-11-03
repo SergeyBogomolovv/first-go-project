@@ -8,6 +8,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+type UserController interface {
+	RegisterRoutes(mux *chi.Mux)
+	GetUserByID(w http.ResponseWriter, r *http.Request)
+	CreateUser(w http.ResponseWriter, r *http.Request)
+	GetAllUsers(w http.ResponseWriter, r *http.Request)
+	DeleteUser(w http.ResponseWriter, r *http.Request)
+}
 
 type userController struct {
 	service UserService
@@ -15,14 +22,14 @@ type userController struct {
 
 func (c *userController) RegisterRoutes(mux *chi.Mux) {
 	mux.Route("/users", func(r chi.Router) {
-		r.Get("/{id}", c.getUserByID)
-		r.Get("/", c.getAllUsers)
-		r.Post("/create", c.createUser)
-		r.Delete("/{id}", c.deleteUser)
+		r.Get("/{id}", c.GetUserByID)
+		r.Get("/", c.GetAllUsers)
+		r.Post("/create", c.CreateUser)
+		r.Delete("/{id}", c.DeleteUser)
 	})
 }
 
-func (c *userController) getUserByID(w http.ResponseWriter, r *http.Request) {
+func (c *userController) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -40,7 +47,7 @@ func (c *userController) getUserByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func (c *userController) createUser(w http.ResponseWriter, r *http.Request) {
+func (c *userController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user User
 
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -59,7 +66,7 @@ func (c *userController) createUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func (c *userController) getAllUsers(w http.ResponseWriter, r *http.Request) {
+func (c *userController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := c.service.GetAllUsers(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
@@ -70,7 +77,7 @@ func (c *userController) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) {
+func (c *userController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -91,6 +98,6 @@ func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(message)
 }
 
-func NewUserController(service UserService) *userController {
+func NewUserController(service UserService) UserController {
 	return &userController{service: service}
 }
