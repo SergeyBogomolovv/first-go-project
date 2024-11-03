@@ -36,8 +36,13 @@ func main() {
 
 	app := app.NewApplication(db, r) 
 
-	app.RegisterModule(users.NewUsersModule())
-	app.RegisterModule(posts.NewPostsModule())
+	usersModule := users.NewUsersModule()
+	postsModule := posts.NewPostsModule()
+
+	app.RegisterModule(usersModule)
+
+	postsModule.InjectUserService(usersModule.Service)
+	app.RegisterModule(postsModule)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	

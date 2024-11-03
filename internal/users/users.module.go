@@ -7,17 +7,17 @@ import (
 )
 
 type UsersModule struct {
-	repo       UserRepository
-	service    UserService
-	controller UserController
+	Repo       UserRepository
+	Service    UserService
+	Controller UserController
 }
 
 func (m *UsersModule) Register(db *sql.DB, router *chi.Mux) {
-	m.repo = NewUserRepository(db)
-	m.service = NewUserService(m.repo)
-	m.controller = NewUserController(m.service)
+	m.Repo = NewUserRepository(db)
+	m.Service = NewUserService(m.Repo)
+	m.Controller = NewUserController(m.Service)
 
-	m.controller.RegisterRoutes(router) 
+	m.Controller.RegisterRoutes(router) 
 }
 
 func NewUsersModule() *UsersModule {
