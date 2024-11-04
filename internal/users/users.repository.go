@@ -81,9 +81,13 @@ func (r *userRepository) GetMany(ctx context.Context) ([]*models.User, error) {
 func (r *userRepository) DeleteUser(ctx context.Context, id uint64) error {
 	query := `DELETE FROM users WHERE id = $1`
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("error deleting user")
+	}
+
+	if rowsAffected, err := res.RowsAffected(); err != nil || rowsAffected == 0 {
+		return fmt.Errorf("user not found")
 	}
 
 	return nil

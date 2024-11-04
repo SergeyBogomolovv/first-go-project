@@ -59,12 +59,7 @@ func (s *userService) GetAllUsers(ctx context.Context) ([]*models.User, error) {
 }
 
 func (s *userService) DeleteUser(ctx context.Context, id uint64) error {
-	_, err := s.repo.GetOne(ctx, id)
-	if err != nil {
-		return errors.New(UserNotFound)
-	}
-	err = s.repo.DeleteUser(ctx, id)
-	if err != nil {
+	if err := s.repo.DeleteUser(ctx, id); err != nil {
 		return err
 	}
 	return nil
