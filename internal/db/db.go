@@ -1,34 +1,23 @@
 package db
 
 import (
-	"context"
-	"database/sql"
+	"fmt"
 	"go-back/internal/config"
-	"time"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-func ConnectToDB(cfg config.DBConfig) (*sql.DB, error) {
-	db, err := sql.Open("postgres", cfg.Addr)
+func ConnectToDB(cfg config.DBConfig) (*sqlx.DB, error) {
+	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s sslmode=disable", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DB)
+	db, err := sqlx.Connect("postgres", dataSource)
 	if err != nil {
 		return nil, err
 	}
 
-	duration, err := time.ParseDuration(cfg.MaxIdleTime)
+	err = db.Ping()
 	if err != nil {
 		return nil, err
-	}
-
-	db.SetMaxOpenConns(cfg.MaxOpenConns)
-	db.SetMaxIdleConns(cfg.MaxIdleConns)
-	db.SetConnMaxIdleTime(duration)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-	defer cancel()
-
-	if err := db.PingContext(ctx); err != nil {
-		return nil, err 
 	}
 
 	return db, nil

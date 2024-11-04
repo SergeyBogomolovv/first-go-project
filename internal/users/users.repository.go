@@ -2,9 +2,10 @@ package users
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type User struct {
@@ -23,7 +24,7 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (r *userRepository) Create(ctx context.Context, user *User) error {
@@ -107,6 +108,6 @@ func (r *userRepository) DeleteUser(ctx context.Context,id int) error {
 	return nil
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
+func NewUserRepository(db *sqlx.DB) UserRepository {
 	return &userRepository{db: db}
 }

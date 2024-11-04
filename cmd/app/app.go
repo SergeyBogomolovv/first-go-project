@@ -2,21 +2,21 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 )
 
 type Application struct {
-	DB *sql.DB
+	DB *sqlx.DB
 	Router *chi.Mux
 }
 
 type Module interface {
-	Register(db *sql.DB, router *chi.Mux)
+	Register(db *sqlx.DB, router *chi.Mux)
 }
 
 func (app *Application) RegisterModule(module Module) {
@@ -43,6 +43,6 @@ func (app *Application) Run(ctx context.Context, addr string) error {
 	return s.ListenAndServe()
 }
 
-func NewApplication(db *sql.DB, router *chi.Mux) *Application {
+func NewApplication(db *sqlx.DB, router *chi.Mux) *Application {
 	return &Application{DB: db, Router: router}
 }

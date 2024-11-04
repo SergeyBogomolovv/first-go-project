@@ -1,9 +1,8 @@
 package users
 
 import (
-	"database/sql"
-
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 )
 
 type UsersModule struct {
@@ -12,7 +11,7 @@ type UsersModule struct {
 	Controller UserController
 }
 
-func (m *UsersModule) Register(db *sql.DB, router *chi.Mux) {
+func (m *UsersModule) Register(db *sqlx.DB, router *chi.Mux) {
 	m.Repo = NewUserRepository(db)
 	m.Service = NewUserService(m.Repo)
 	m.Controller = NewUserController(m.Service)

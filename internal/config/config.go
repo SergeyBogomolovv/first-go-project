@@ -13,22 +13,30 @@ type Config struct {
 }
 
 type DBConfig struct {
-	Addr string
+	Host string
+	Port uint16
+	User string
+	Password string
+	DB string
 	MaxOpenConns int
 	MaxIdleConns int
 	MaxIdleTime string
 }
 
-func InitConfig() Config {
+func InitConfig() *Config {
 	err := godotenv.Load()
   if err != nil {
     log.Fatal("Error loading .env file")
   }
 
-	return Config{
+	return &Config{
 		Addr: env.GetString("ADDR", ":3000"),
 		DB: DBConfig{
-			Addr: env.GetString("DB_ADDR", "postgres://admin:admin@localhost:5432/social?sslmode=disable"),
+			Host: env.GetString("POSTGRES_HOST", "localhost"),
+			Port: uint16(env.GetInt("POSTGRES_PORT", 5432)),
+			User: env.GetString("POSTGRES_USER", "admin"),
+			Password: env.GetString("POSTGRES_PASSWORD", "admin"),
+			DB: env.GetString("POSTGRES_DB", "social"),
 			MaxOpenConns: env.GetInt("DB_MAX_OPEN_CONS", 30),
 			MaxIdleConns: env.GetInt("DB_MAX_IDLE_CONS", 30),
 			MaxIdleTime: env.GetString("DB_MAX_IDLE_TIME", "15m"),

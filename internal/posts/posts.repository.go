@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Post struct {
@@ -21,7 +23,7 @@ type PostRepository interface {
 }
 
 type postRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (r *postRepository) CreatePost(ctx context.Context, post *Post) error {
@@ -79,6 +81,6 @@ func getPostsArray(rows *sql.Rows) ([]*Post, error) {
 	return posts, nil
 }
 
-func NewPostRepository(db *sql.DB) PostRepository {
+func NewPostRepository(db *sqlx.DB) PostRepository {
 	return &postRepository{db: db}
 }
