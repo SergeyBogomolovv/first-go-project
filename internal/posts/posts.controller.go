@@ -45,7 +45,7 @@ func (c *postController) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 func (c *postController) FindAll(w http.ResponseWriter, r *http.Request) {
 	posts, err := c.service.GetAllPosts(r.Context())
-	
+
 	if err != nil {
 		http.Error(w, "error fetching posts", http.StatusBadGateway)
 		return
@@ -73,7 +73,6 @@ func (c *postController) FindByUserId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }
-
 
 func NewPostController(service PostService) PostController {
 	return &postController{service: service}

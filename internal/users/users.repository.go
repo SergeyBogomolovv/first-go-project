@@ -2,109 +2,90 @@ package users
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"go-back/internal/entities"
+	"go-back/internal/models"
 
 	"github.com/jmoiron/sqlx"
 )
 
-type User struct {
-	ID        int  `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	CreatedAt string `json:"created_at"`
-}
-
 type UserRepository interface {
-	Create(ctx context.Context, user *User) error
-	GetOne(ctx context.Context, id int) (*User, error)
-	GetMany(ctx context.Context) ([]*User, error)
-	DeleteUser(ctx context.Context, id int) error
+	Create(ctx context.Context, dto *CreateUserDto) (*models.User, error)
+	GetOne(ctx context.Context, id uint64) (*models.User, error)
+	GetMany(ctx context.Context) ([]*models.User, error)
+	DeleteUser(ctx context.Context, id uint64) error
+	CheckUserExists(ctx context.Context, dto *UserExistsDto) (bool, error)
 }
 
 type userRepository struct {
 	db *sqlx.DB
 }
 
-func (r *userRepository) Create(ctx context.Context, user *User) error {
-	existingUserQuery := `
-		SELECT CASE WHEN EXISTS (SELECT 1 FROM users WHERE username = $1 OR email = $2) THEN TRUE ELSE FALSE END AS record_exists		
-	`
-	var isUserExists bool
-	r.db.QueryRowContext(ctx, existingUserQuery, user.Username, user.Email).Scan(&isUserExists)
-	if isUserExists {
-		return errors.New("user already exists")
-	}
-
+func (r *userRepository) Create(ctx context.Context, dto *CreateUserDto) (*models.User, error) {
 	query := `
 		INSERT INTO users (username, password, email) 
 		VALUES ($1, $2, $3) 
-		RETURNING id, created_at
+		RETURNING id, username, email, created_at
 	`
-	err := r.db.QueryRowContext(ctx, query, user.Username, user.Password, user.Email).
-		Scan(&user.ID, &user.CreatedAt)
+	user := &entities.User{}
 
-	if err != nil {
-		return fmt.Errorf("error creating user: %w", err)
+	if err := r.db.GetContext(ctx, user, query, dto.Username, dto.Password, dto.Email); err != nil {
+		fmt.Println(err)
+		return nil, fmt.Errorf("error creating user: %v", err)
 	}
 
-	return nil
+	return user.ToModel(), nil
 }
 
-func (r *userRepository) GetOne(ctx context.Context, id int) (*User, error) {
+func (r *userRepository) CheckUserExists(ctx context.Context, dto *UserExistsDto) (bool, error) {
 	query := `
-		SELECT id, username, email, created_at 
-		FROM users 
-		WHERE id = $1
+		SELECT CASE WHEN EXISTS (SELECT 1 FROM users WHERE username = $1 OR email = $2) THEN TRUE ELSE FALSE END AS record_exists		
 	`
-	user := &User{}
 
-	if err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.CreatedAt,
-	); err != nil {
+	var isUserExists bool
+	err := r.db.GetContext(ctx, &isUserExists, query, dto.Username, dto.Email)
+	if err != nil {
+		return false, fmt.Errorf("error checking if user exists: %w", err)
+	}
+
+	return isUserExists, nil
+}
+
+func (r *userRepository) GetOne(ctx context.Context, id uint64) (*models.User, error) {
+	query := `SELECT id, username, email, created_at FROM users WHERE id = $1`
+	user := &entities.User{}
+
+	if err := r.db.GetContext(ctx, user, query, id); err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return user.ToModel(), nil
 }
 
-func (r *userRepository) GetMany(ctx context.Context) ([]*User, error) {
+func (r *userRepository) GetMany(ctx context.Context) ([]*models.User, error) {
 	query := `SELECT id, username, email, created_at FROM users`
-	rows, err := r.db.QueryContext(ctx, query)
-	if err != nil {
+	users := make([]*entities.User, 0)
+
+	if err := r.db.SelectContext(ctx, &users, query); err != nil {
 		return nil, fmt.Errorf("error retrieving users: %w", err)
 	}
 
-	defer rows.Close()
-
-	var users []*User
-	for rows.Next() {
-		user := &User{}
-		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt); err != nil {
-			return nil, fmt.Errorf("error scanning user: %w", err)
-		}
-		users = append(users, user)
+	modelUsers := make([]*models.User, 0)
+	for _, user := range users {
+		modelUsers = append(modelUsers, user.ToModel())
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error reading users: %w", err)
-	}
-
-	return users, nil
+	return modelUsers, nil
 }
 
-func (r *userRepository) DeleteUser(ctx context.Context,id int) error {
+func (r *userRepository) DeleteUser(ctx context.Context, id uint64) error {
 	query := `DELETE FROM users WHERE id = $1`
 
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("error deleting user")
 	}
-	
+
 	return nil
 }
 

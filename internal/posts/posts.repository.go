@@ -9,10 +9,10 @@ import (
 )
 
 type Post struct {
-	ID int64 `json:"id"`
-	Content string `json:"content"`
-	Title string `json:"title"`
-	UserID int `json:"user_id"`
+	ID        int64  `json:"id"`
+	Content   string `json:"content"`
+	Title     string `json:"title"`
+	UserID    uint64 `json:"user_id"`
 	CreatedAt string `json:"created_at"`
 }
 

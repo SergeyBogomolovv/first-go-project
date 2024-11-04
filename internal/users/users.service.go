@@ -3,7 +3,8 @@ package users
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
+	"go-back/internal/models"
 )
 
 type userService struct {
@@ -11,46 +12,61 @@ type userService struct {
 }
 
 type UserService interface {
-	CreateUser(ctx context.Context, user *User) error
-	GetUserByID(ctx context.Context, id int) (*User, error)
-	GetAllUsers(ctx context.Context) ([]*User, error)
-	DeleteUser(ctx context.Context, id int) error
+	CreateUser(ctx context.Context, dto *CreateUserDto) (*models.User, error)
+	GetUserByID(ctx context.Context, id uint64) (*models.User, error)
+	GetAllUsers(ctx context.Context) ([]*models.User, error)
+	DeleteUser(ctx context.Context, id uint64) error
 }
 
-func (s *userService) CreateUser(ctx context.Context, user *User) error {
+func (s *userService) CreateUser(ctx context.Context, dto *CreateUserDto) (*models.User, error) {
 	switch {
-	case user.Email == "":
-		return errors.New("invalid email")
-	case len(user.Password) < 6:
-		return errors.New("password must be longer than 6 chars")
-	case user.Username == "":
-		return errors.New("invalid username")
+	case dto.Email == "":
+		return nil, fmt.Errorf("invalid email")
+	case len(dto.Password) < 6:
+		return nil, fmt.Errorf("password must be longer than 6 chars")
+	case dto.Username == "":
+		return nil, fmt.Errorf("invalid username")
 	}
 
-	return s.repo.Create(ctx, user)
+	isUserExists, err := s.repo.CheckUserExists(ctx, &UserExistsDto{Username: dto.Username, Email: dto.Email})
+	if err != nil {
+		return nil, fmt.Errorf("error checking if user exists: %w", err)
+	}
+	if isUserExists {
+		return nil, errors.New(UserExists)
+	}
+
+	return s.repo.Create(ctx, dto)
 }
 
-func (s *userService) GetUserByID(ctx context.Context, id int) (*User, error) {
-	log.Println("Getting user")
-	user, err :=  s.repo.GetOne(ctx, id)
+func (s *userService) GetUserByID(ctx context.Context, id uint64) (*models.User, error) {
+	user, err := s.repo.GetOne(ctx, id)
 
 	if err != nil {
-		return nil, errors.New("user not found")
+		return nil, errors.New(UserNotFound)
 	}
 
 	return user, nil
 }
 
-func (s *userService) GetAllUsers(ctx context.Context) ([]*User, error) {
-	return s.repo.GetMany(ctx)
+func (s *userService) GetAllUsers(ctx context.Context) ([]*models.User, error) {
+	users, err := s.repo.GetMany(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving users: %w", err)
+	}
+
+	return users, nil
 }
 
-func (s *userService) DeleteUser(ctx context.Context, id int) error {
-	err := s.repo.DeleteUser(ctx, id)
+func (s *userService) DeleteUser(ctx context.Context, id uint64) error {
+	_, err := s.repo.GetOne(ctx, id)
+	if err != nil {
+		return errors.New(UserNotFound)
+	}
+	err = s.repo.DeleteUser(ctx, id)
 	if err != nil {
 		return err
 	}
-	log.Printf("User with id %v deleted", id)
 	return nil
 }
 
