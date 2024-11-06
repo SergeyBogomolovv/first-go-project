@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"go-back/cmd/app"
-	"go-back/internal/config"
-	"go-back/internal/db"
+	"go-back/cmd/app/internal"
 	"go-back/internal/posts"
 	"go-back/internal/users"
 	"log"
@@ -17,9 +15,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func main() { 
-	cfg := config.InitConfig()
-	db, err := db.ConnectToDB(cfg.DB)
+func main() {
+	cfg := internal.InitConfig()
+	db, err := internal.ConnectToDB(cfg.DB)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -34,7 +32,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.RequestID)
 
-	app := app.NewApplication(db, r) 
+	app := NewApplication(db, r)
 
 	usersModule := users.NewUsersModule()
 	postsModule := posts.NewPostsModule()
@@ -45,10 +43,10 @@ func main() {
 	app.RegisterModule(postsModule)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
-  defer cancel()
 
-  go func() {
+	defer cancel()
+
+	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c

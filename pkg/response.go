@@ -1,4 +1,4 @@
-package utils
+package pkg
 
 import (
 	"encoding/json"
@@ -23,4 +23,10 @@ func SendErrorResponse(w http.ResponseWriter, err string, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(ErrorResponse{Error: err})
+}
+
+func SendJSONResponse(w http.ResponseWriter, data interface{}, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
 }

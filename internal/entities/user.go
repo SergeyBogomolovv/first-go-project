@@ -18,14 +18,3 @@ func (u *User) ToModel() *models.User {
 		CreatedAt: u.CreatedAt,
 	}
 }
-
-type UserWithPost struct {
-	ID            uint64 `db:"id"`
-	Username      string `db:"username"`
-	Email         string `db:"email"`
-	CreatedAt     string `db:"created_at"`
-	PostID        uint64 `db:"post_id"`
-	Content       string `db:"post_content"`
-	Title         string `db:"post_title"`
-	PostCreatedAt string `db:"post_created_at"`
-}

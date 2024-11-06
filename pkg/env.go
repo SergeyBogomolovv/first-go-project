@@ -1,4 +1,4 @@
-package env
+package pkg
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 func GetString(key, fallback string) string {
 	val, exists := os.LookupEnv(key)
 	if exists {
-		return val 
+		return val
 	} else {
 		return fallback
 	}

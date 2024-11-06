@@ -1,4 +1,4 @@
-package app
+package main
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 type Application struct {
-	DB *sqlx.DB
+	DB     *sqlx.DB
 	Router *chi.Mux
 }
 
@@ -25,11 +25,11 @@ func (app *Application) RegisterModule(module Module) {
 
 func (app *Application) Run(ctx context.Context, addr string) error {
 	s := &http.Server{
-		Addr: addr,
-		Handler: app.Router,
+		Addr:         addr,
+		Handler:      app.Router,
 		WriteTimeout: time.Second * 30,
-		ReadTimeout: time.Second * 15,
-		IdleTimeout: time.Minute,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Minute,
 	}
 
 	go func() {
