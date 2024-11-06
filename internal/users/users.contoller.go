@@ -2,11 +2,13 @@ package users
 
 import (
 	"encoding/json"
+	"fmt"
 	"go-back/pkg"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
 
 type UserController interface {
@@ -18,7 +20,8 @@ type UserController interface {
 }
 
 type userController struct {
-	service UserService
+	service  UserService
+	validate *validator.Validate
 }
 
 func (c *userController) RegisterRoutes(mux *chi.Mux) {
@@ -48,10 +51,16 @@ func (c *userController) GetUserByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *userController) CreateUser(w http.ResponseWriter, r *http.Request) {
+
 	var dto CreateUserDto
 
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 		pkg.SendErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.validate.Struct(&dto); err != nil {
+		pkg.SendErrorResponse(w, fmt.Sprintf("Validation failed: %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -100,5 +109,5 @@ func (c *userController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewUserController(service UserService) UserController {
-	return &userController{service: service}
+	return &userController{service: service, validate: validator.New(validator.WithRequiredStructEnabled())}
 }

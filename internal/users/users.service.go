@@ -19,15 +19,6 @@ type UserService interface {
 }
 
 func (s *userService) CreateUser(ctx context.Context, dto *CreateUserDto) (*models.User, error) {
-	switch {
-	case dto.Email == "":
-		return nil, fmt.Errorf("invalid email")
-	case len(dto.Password) < 6:
-		return nil, fmt.Errorf("password must be longer than 6 chars")
-	case dto.Username == "":
-		return nil, fmt.Errorf("invalid username")
-	}
-
 	isUserExists, err := s.repo.CheckUserExists(ctx, &UserExistsDto{Username: dto.Username, Email: dto.Email})
 	if err != nil {
 		return nil, fmt.Errorf("error checking if user exists: %w", err)
