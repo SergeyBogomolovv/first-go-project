@@ -9,8 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
-	github.com/swaggo/http-swagger/example/go-chi v0.0.0-20240815064334-3a7ae3083475
-	github.com/swaggo/http-swagger/v2 v2.0.0
+	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.4
 )
 

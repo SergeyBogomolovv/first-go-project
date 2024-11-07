@@ -33,6 +33,15 @@ func (c *userController) RegisterRoutes(mux *chi.Mux) {
 	})
 }
 
+// GetUserByID godoc
+//	@Summary	Get user details
+//	@Tags		users
+//	@Accept		json
+//	@Produce	json
+//	@Param		id	path		int	true	"User ID"
+//	@Success	200	{object}	models.User
+//	@Failure	400	{object}	response.ErrorResponse
+//	@Router		/users/{id} [get]
 func (c *userController) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
@@ -50,6 +59,15 @@ func (c *userController) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	response.SendJSON(w, user, http.StatusOK)
 }
 
+// CreateUser godoc
+//	@Summary	Create new user
+//	@Tags		users
+//	@Accept		json
+//	@Produce	json
+//	@Param		post	body		CreateUserDto	true	"Create new user"
+//	@Success	201		{object}	models.User
+//	@Failure	400		{object}	response.ErrorResponse
+//	@Router		/users/create [post]
 func (c *userController) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	var dto CreateUserDto
@@ -78,6 +96,13 @@ func (c *userController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	response.SendJSON(w, user, http.StatusCreated)
 }
 
+// GetAllUsers godoc
+//	@Summary	Get all users
+//	@Tags		users
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{array}	models.User
+//	@Router		/users [get]
 func (c *userController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := c.service.GetAllUsers(r.Context())
 	if err != nil {
@@ -88,6 +113,14 @@ func (c *userController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	response.SendJSON(w, users, http.StatusOK)
 }
 
+// DeleteUser godoc
+//	@Summary	Delete user
+//	@Tags		users
+//	@Accept		json
+//	@Produce	json
+//	@Param		id	path		int	true	"User ID"
+//	@Failure	400	{object}	response.ErrorResponse
+//	@Router		/{id} [delete]
 func (c *userController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)

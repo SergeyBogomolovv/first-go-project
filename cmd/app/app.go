@@ -6,17 +6,19 @@ import (
 	"net/http"
 	"time"
 
+	_ "go-back/docs"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/swaggo/http-swagger/example/go-chi/docs"
+
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-// @title Golang API Example
-// @version 1.0
-// @description This is my first Go API
-// @contact.email bogomolovs693@gmail.com
+// @title			Golang API Example
+// @version		1.0
+// @description	This is my first Go API
+// @contact.email	bogomolovs693@gmail.com
 func NewRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)

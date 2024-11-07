@@ -14,7 +14,7 @@ import (
 type PostController interface {
 	RegisterRoutes(router *chi.Mux)
 	CreatePost(w http.ResponseWriter, r *http.Request)
-	FindAll(w http.ResponseWriter, r *http.Request)
+	FindAllPosts(w http.ResponseWriter, r *http.Request)
 	FindByUserId(w http.ResponseWriter, r *http.Request)
 	DeletePost(w http.ResponseWriter, r *http.Request)
 }
@@ -26,13 +26,22 @@ type postController struct {
 
 func (c *postController) RegisterRoutes(router *chi.Mux) {
 	router.Route("/posts", func(r chi.Router) {
-		r.Get("/", c.FindAll)
+		r.Get("/", c.FindAllPosts)
 		r.Get("/by-user/{userId}", c.FindByUserId)
 		r.Post("/create", c.CreatePost)
 		r.Delete("/delete/{id}", c.DeletePost)
 	})
 }
 
+// CreatePost godoc
+//	@Summary	Create new post
+//	@Tags		posts
+//	@Accept		json
+//	@Produce	json
+//	@Param		post	body		CreatePostDto	true	"Create new post"
+//	@Success	201		{object}	models.Post
+//	@Failure	400		{object}	response.ErrorResponse
+//	@Router		/posts/create [post]
 func (c *postController) CreatePost(w http.ResponseWriter, r *http.Request) {
 	var dto CreatePostDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -59,15 +68,15 @@ func (c *postController) CreatePost(w http.ResponseWriter, r *http.Request) {
 	response.SendJSON(w, post, http.StatusCreated)
 }
 
-// FindAll godoc
-// @Summary Get details of all posts
-// @Description Get details of all posts
-// @Tags posts
-// @Accept  json
-// @Produce  json
-// @Success 200 {array} models.Post
-// @Router /posts [get]
-func (c *postController) FindAll(w http.ResponseWriter, r *http.Request) {
+// FindAllPosts godoc
+//	@Summary	Get details of all posts
+//	@Tags		posts
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{array}		models.Post
+//	@Failure	400	{object}	response.ErrorResponse
+//	@Router		/posts [get]
+func (c *postController) FindAllPosts(w http.ResponseWriter, r *http.Request) {
 	posts, err := c.service.GetAllPosts(r.Context())
 
 	if err != nil {
@@ -77,6 +86,15 @@ func (c *postController) FindAll(w http.ResponseWriter, r *http.Request) {
 	response.SendJSON(w, posts, http.StatusOK)
 }
 
+// FindByUserId godoc
+//	@Summary	Get details users posts
+//	@Tags		posts
+//	@Accept		json
+//	@Produce	json
+//	@Param		userId	path		int	true	"User ID"
+//	@Success	200		{array}		models.Post
+//	@Failure	400		{object}	response.ErrorResponse
+//	@Router		/posts/by-user/{userId} [get]
 func (c *postController) FindByUserId(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "userId")
 	userId, err := strconv.ParseInt(idParam, 10, 64)
@@ -94,6 +112,14 @@ func (c *postController) FindByUserId(w http.ResponseWriter, r *http.Request) {
 	response.SendJSON(w, posts, http.StatusOK)
 }
 
+// DeletePost godoc
+//	@Summary	Get details users posts
+//	@Tags		posts
+//	@Accept		json
+//	@Produce	json
+//	@Param		id	path		int	true	"Post ID"
+//	@Failure	400	{object}	response.ErrorResponse
+//	@Router		/posts/delete/{id} [delete]
 func (c *postController) DeletePost(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
