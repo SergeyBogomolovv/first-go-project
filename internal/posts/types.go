@@ -7,5 +7,6 @@ type CreatePostDto struct {
 }
 
 const (
-	PostNotFound = "post not found"
+	PostNotFound   = "post not found"
+	AuthorNotFound = "author not found"
 )

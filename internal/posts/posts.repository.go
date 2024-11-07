@@ -2,83 +2,88 @@ package posts
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
+	"go-back/internal/entities"
+	"go-back/internal/models"
 
 	"github.com/jmoiron/sqlx"
 )
 
-type Post struct {
-	ID        int64  `json:"id"`
-	Content   string `json:"content"`
-	Title     string `json:"title"`
-	UserID    uint64 `json:"user_id"`
-	CreatedAt string `json:"created_at"`
-}
-
 type PostRepository interface {
-	CreatePost(ctx context.Context, post *Post) error
-	GetAllPosts(ctx context.Context) ([]*Post, error)
-	GetPostsByUserId(ctx context.Context, userId int) ([]*Post, error)
+	CreatePost(ctx context.Context, dto *CreatePostDto) (*models.Post, error)
+	GetAllPosts(ctx context.Context) ([]*models.Post, error)
+	GetPostsByUserId(ctx context.Context, userId uint64) ([]*models.Post, error)
+	DeletePost(ctx context.Context, id uint64) error
 }
 
 type postRepository struct {
 	db *sqlx.DB
 }
 
-func (r *postRepository) CreatePost(ctx context.Context, post *Post) error {
+func (r *postRepository) CreatePost(ctx context.Context, dto *CreatePostDto) (*models.Post, error) {
 	query := `
 		INSERT INTO posts (content, title, user_id)
 		VALUES ($1, $2, $3)
-		RETURNING id, created_at
+		RETURNING id, content, title, user_id, created_at
 	`
 
-	err := r.db.QueryRowContext(ctx, query, post.Content, post.Title, post.UserID).Scan(&post.ID, &post.CreatedAt)
+	post := &entities.Post{}
 
-	if err != nil {
-		return fmt.Errorf("error creating post %w", err)
+	if err := r.db.GetContext(ctx, post, query, dto.Content, dto.Title, dto.UserID); err != nil {
+		return nil, fmt.Errorf("error creating post %w", err)
 	}
-	return nil
+
+	return post.ToModel(), nil
 }
 
-func (r *postRepository) GetAllPosts(ctx context.Context) ([]*Post, error) {
+func (r *postRepository) GetAllPosts(ctx context.Context) ([]*models.Post, error) {
 	query := `SELECT id, content, title, user_id, created_at FROM posts`
-	rows, err := r.db.QueryContext(ctx, query)
 
-	if err != nil {
+	posts := make([]*entities.Post, 0)
+	if err := r.db.SelectContext(ctx, &posts, query); err != nil {
+		fmt.Println(err)
 		return nil, fmt.Errorf("failed to get posts")
 	}
 
-	return getPostsArray(rows)
+	modelPosts := make([]*models.Post, 0)
+
+	for _, post := range posts {
+		modelPosts = append(modelPosts, post.ToModel())
+	}
+
+	return modelPosts, nil
 }
 
-func (r *postRepository) GetPostsByUserId(ctx context.Context, userId int) ([]*Post, error) {
+func (r *postRepository) GetPostsByUserId(ctx context.Context, userId uint64) ([]*models.Post, error) {
 	query := `SELECT id, content, title, user_id, created_at FROM posts WHERE user_id = $1`
-	rows, err := r.db.QueryContext(ctx, query, userId)
 
-	if err != nil {
+	posts := make([]*entities.Post, 0)
+	if err := r.db.SelectContext(ctx, posts, query, userId); err != nil {
 		return nil, fmt.Errorf("failed to get posts")
 	}
 
-	return getPostsArray(rows)
+	modelPosts := make([]*models.Post, 0)
+	for _, post := range posts {
+		modelPosts = append(modelPosts, post.ToModel())
+	}
+
+	return modelPosts, nil
 }
 
-func getPostsArray(rows *sql.Rows) ([]*Post, error) {
-	defer rows.Close()
+func (r *postRepository) DeletePost(ctx context.Context, id uint64) error {
+	query := `DELETE FROM posts WHERE id = $1`
 
-	var posts []*Post
-	for rows.Next() {
-		post := &Post{}
-		if err := rows.Scan(&post.ID, &post.Content, &post.Title, &post.UserID, &post.CreatedAt); err != nil {
-			return nil, fmt.Errorf("error scanning posts")
-		}
-		posts = append(posts, post)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error reading posts: %w", err)
+	res, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("error deleting post")
 	}
 
-	return posts, nil
+	if rowsAffected, err := res.RowsAffected(); err != nil || rowsAffected == 0 {
+		return errors.New(PostNotFound)
+	}
+
+	return nil
 }
 
 func NewPostRepository(db *sqlx.DB) PostRepository {
