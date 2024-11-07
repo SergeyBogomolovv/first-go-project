@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go-back/internal/models"
-	"go-back/internal/users"
+	"go-back/internal/modules/users"
 )
 
 type PostService interface {

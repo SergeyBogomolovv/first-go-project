@@ -2,23 +2,24 @@ package main
 
 import (
 	"context"
-	"go-back/cmd/app/internal"
-	"go-back/internal/posts"
-	"go-back/internal/users"
+	"go-back/internal/config"
+	"go-back/internal/database"
+	"go-back/internal/modules/posts"
+	"go-back/internal/modules/users"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	cfg := internal.InitConfig()
-	db, err := internal.ConnectToDB(cfg.DB)
+	cfg, err := config.InitConfig()
+	if err != nil {
+		log.Fatalf("Failed to init config: %v", err)
+	}
 
+	db, err := database.ConnectToDB(cfg.DB)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -26,24 +27,18 @@ func main() {
 	log.Println("database connection established")
 	defer db.Close()
 
-	r := chi.NewRouter()
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Logger)
-	r.Use(middleware.RequestID)
+	router := NewRouter()
 
-	app := NewApplication(db, r)
+	app := NewApplication(":3000", db, router)
 
 	usersModule := users.NewUsersModule()
-	postsModule := posts.NewPostsModule()
-
 	app.RegisterModule(usersModule)
 
+	postsModule := posts.NewPostsModule()
 	postsModule.InjectUserService(usersModule.Service)
 	app.RegisterModule(postsModule)
 
 	ctx, cancel := context.WithCancel(context.Background())
-
 	defer cancel()
 
 	go func() {
@@ -53,7 +48,7 @@ func main() {
 		cancel()
 	}()
 
-	if err := app.Run(ctx, cfg.Addr); err != nil && err != http.ErrServerClosed {
+	if err := app.Run(ctx); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
 	}
 }
